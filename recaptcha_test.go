@@ -9,7 +9,7 @@ import (
 
 func TestRecaptchaInit(t *test.T) {
 	r := New("6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe")
-	assert.Equal(t, reflect.TypeOf(r), reflect.TypeOf(recaptcha.Recaptcha{}))
+	assert.Equal(t, reflect.TypeOf(r), reflect.TypeOf(Recaptcha{}))
 }
 
 func TestSuccess(t *test.T) {
