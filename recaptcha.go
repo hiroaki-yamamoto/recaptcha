@@ -20,3 +20,12 @@ func (r Recaptcha) Check(remoteIP string, response string) (bool, err error) {
 func New(secretKey string) Recaptcha {
 	return Recaptcha{secKey: secretKey, client: &http.Client{}}
 }
+
+type _Resp struct {
+	Success       bool     `json:"success,omitempty"`
+	Score         float64  `json:"score,omitempty"`
+	Action        string   `json:"action,omitempty"`
+	ChallengeTime string   `json:"challenge_ts,omitempty"`
+	HostName      string   `json:"host,omitempty"`
+	Errors        []string `json:"error-codes,omitempty"`
+}
