@@ -18,7 +18,7 @@ func TestRecaptchaInit(t *test.T) {
 }
 
 func TestSuccess(t *test.T) {
-	mock, close := stubs.CreateClientStub(http.HandlerFunc(
+	mock, close, err := stubs.CreateClientStub(http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
 			encoder := json.NewEncoder(w)
 			err := encoder.Encode(_Resp{
@@ -28,6 +28,7 @@ func TestSuccess(t *test.T) {
 			assert.NilError(t, err)
 		},
 	))
+	assert.NilError(t, err)
 	defer close()
 	r := New("6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe")
 	r.client = mock
