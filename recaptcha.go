@@ -9,7 +9,10 @@ import (
 
 const verifyURL = "https://www.google.com/recaptcha/api/siteverify"
 
-type _Resp struct {
+// Response represents the response from the server. It includes whethere
+// the captcha is succeeded, the score (v3), action, time of the challenge,
+// the name of the host, and error codes.
+type Response struct {
 	Success       bool      `json:"success,omitempty"`
 	Score         float64   `json:"score,omitempty"`
 	Action        string    `json:"action,omitempty"`
@@ -26,7 +29,7 @@ type Recaptcha struct {
 
 // Check whether the response is from
 // human (returns true) or not (returns false).
-func (r Recaptcha) Check(remoteIP, response string) (res bool, err error) {
+func (r Recaptcha) Check(remoteIP, response string) (res Response, err error) {
 	raw, err := r.client.PostForm(verifyURL, url.Values{
 		"secret":   {r.secKey},
 		"remoteip": {remoteIP},
@@ -37,12 +40,7 @@ func (r Recaptcha) Check(remoteIP, response string) (res bool, err error) {
 	}
 	defer raw.Body.Close()
 	decoder := json.NewDecoder(raw.Body)
-	var resp _Resp
-	err = decoder.Decode(&resp)
-	if err != nil {
-		return
-	}
-	res = resp.Success
+	err = decoder.Decode(&res)
 	return
 }
 

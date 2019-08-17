@@ -19,10 +19,10 @@ func TestRecaptchaInit(t *test.T) {
 
 func performAccess(
 	handler http.HandlerFunc,
-) (bool, error) {
+) (Response, error) {
 	mock, close, err := stubs.CreateClientStub(handler)
 	if err != nil {
-		return false, err
+		return Response{}, err
 	}
 	defer close()
 	r := New("6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe")
@@ -31,31 +31,33 @@ func performAccess(
 }
 
 func TestSuccess(t *test.T) {
+	rsp := Response{
+		Success:  true,
+		HostName: "localhost",
+	}
 	result, err := performAccess(http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
 			encoder := json.NewEncoder(w)
-			err := encoder.Encode(_Resp{
-				Success:  true,
-				HostName: "localhost",
-			})
+			err := encoder.Encode(rsp)
 			assert.NilError(t, err)
 		},
 	))
 	assert.NilError(t, err)
-	assert.Assert(t, result)
+	assert.DeepEqual(t, result, rsp)
 }
 
 func TestFailure(t *test.T) {
+	rsp := Response{
+		Success:  false,
+		HostName: "localhost",
+	}
 	result, err := performAccess(http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
 			encoder := json.NewEncoder(w)
-			err := encoder.Encode(_Resp{
-				Success:  false,
-				HostName: "localhost",
-			})
+			err := encoder.Encode(rsp)
 			assert.NilError(t, err)
 		},
 	))
 	assert.NilError(t, err)
-	assert.Assert(t, !result)
+	assert.DeepEqual(t, result, rsp)
 }
