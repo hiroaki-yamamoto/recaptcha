@@ -2,6 +2,7 @@ package recaptcha // Needs to mock http request.
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"reflect"
 	test "testing"
@@ -19,8 +20,16 @@ func TestRecaptchaInit(t *test.T) {
 
 func performAccess(
 	handler http.HandlerFunc,
+	httpStubFunc func(http.Handler) (*http.Client, func(), error),
 ) (Response, error) {
-	mock, close, err := stubs.CreateClientStub(handler)
+	var mock *http.Client
+	var close func()
+	var err error
+	if httpStubFunc == nil {
+		mock, close, err = stubs.CreateClientStub(handler)
+	} else {
+		mock, close, err = httpStubFunc(handler)
+	}
 	if err != nil {
 		return Response{}, err
 	}
@@ -41,7 +50,7 @@ func TestSuccess(t *test.T) {
 			err := encoder.Encode(rsp)
 			assert.NilError(t, err)
 		},
-	))
+	), nil)
 	assert.NilError(t, err)
 	assert.DeepEqual(t, result, rsp)
 }
@@ -50,6 +59,7 @@ func TestFailure(t *test.T) {
 	rsp := Response{
 		Success:  false,
 		HostName: "localhost",
+		Errors:   []string{"bad-request"},
 	}
 	result, err := performAccess(http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
@@ -57,7 +67,23 @@ func TestFailure(t *test.T) {
 			err := encoder.Encode(rsp)
 			assert.NilError(t, err)
 		},
-	))
+	), nil)
 	assert.NilError(t, err)
 	assert.DeepEqual(t, result, rsp)
+}
+
+func TestError(t *test.T) {
+	rsp := Response{
+		Success:  true,
+		HostName: "localhost",
+	}
+	result, err := performAccess(http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+			encoder := json.NewEncoder(w)
+			err := encoder.Encode(rsp)
+			assert.NilError(t, err)
+		},
+	), stubs.CreateCliErrStub)
+	assert.Error(t, err, fmt.Sprintf("Post %s: Connection Error", verifyURL))
+	assert.DeepEqual(t, result, Response{})
 }

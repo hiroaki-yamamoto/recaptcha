@@ -1,6 +1,7 @@
 package stubs
 
 import (
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -27,6 +28,12 @@ func (t _RewriteTransport) RoundTrip(
 	return rt.RoundTrip(req)
 }
 
+type _ErrTransport struct{}
+
+func (t _ErrTransport) RoundTrip(_ *http.Request) (*http.Response, error) {
+	return nil, errors.New("Connection Error")
+}
+
 // CreateClientStub creates a stub to handle the request.
 func CreateClientStub(hd http.Handler) (
 	cli *http.Client, close func(), err error,
@@ -40,4 +47,10 @@ func CreateClientStub(hd http.Handler) (
 	cli = &http.Client{Transport: _RewriteTransport{URL: u}}
 	close = s.Close
 	return
+}
+
+// CreateCliErrStub creates a stub that always causes
+// a network connection error.
+func CreateCliErrStub(_ http.Handler) (*http.Client, func(), error) {
+	return &http.Client{Transport: _ErrTransport{}}, func() {}, nil
 }
