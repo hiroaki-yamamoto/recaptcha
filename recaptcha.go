@@ -1,7 +1,9 @@
 package recaptcha
 
 import (
+	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/url"
 	"time"
@@ -19,6 +21,18 @@ type Response struct {
 	ChallengeTime time.Time `json:"challenge_ts,omitempty"`
 	HostName      string    `json:"host,omitempty"`
 	Errors        []string  `json:"error-codes,omitempty"`
+}
+
+// ResponseError repersents the error of response from the server.
+type ResponseError struct {
+	Response *http.Response // Note: Response.Body is always closed in this case.
+	Body     string
+}
+
+func (r ResponseError) Error() string {
+	return fmt.Sprintf(
+		"Post %s: Returned %d: %s", verifyURL, r.Response.StatusCode, r.Body,
+	)
 }
 
 // Recaptcha is a structure to handle recaptcha
@@ -39,6 +53,15 @@ func (r Recaptcha) Check(remoteIP, response string) (res Response, err error) {
 		return
 	}
 	defer raw.Body.Close()
+	if raw.StatusCode != http.StatusOK {
+		var buf bytes.Buffer
+		_, rerr := buf.ReadFrom(raw.Body)
+		err = rerr
+		if err == nil {
+			err = ResponseError{Response: raw, Body: string(buf.String())}
+		}
+		return
+	}
 	decoder := json.NewDecoder(raw.Body)
 	err = decoder.Decode(&res)
 	return

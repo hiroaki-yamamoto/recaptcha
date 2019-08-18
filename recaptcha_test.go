@@ -6,9 +6,7 @@ import (
 	"net/http"
 	"reflect"
 	test "testing"
-)
 
-import (
 	"github.com/hiroaki-yamamoto/recaptcha/stubs"
 	"gotest.tools/assert"
 )
@@ -85,5 +83,22 @@ func TestError(t *test.T) {
 		},
 	), stubs.CreateCliErrStub)
 	assert.Error(t, err, fmt.Sprintf("Post %s: Connection Error", verifyURL))
+	assert.DeepEqual(t, result, Response{})
+}
+
+func TestSvrError(t *test.T) {
+	txt := "Internal Server Error"
+	code := http.StatusInternalServerError
+	result, err := performAccess(http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(code)
+			numWrote, err := w.Write([]byte(txt))
+			assert.NilError(t, err)
+			assert.Equal(t, numWrote, len(txt))
+		},
+	), nil)
+	assert.Error(
+		t, err, fmt.Sprintf("Post %s: Returned %d: %s", verifyURL, code, txt),
+	)
 	assert.DeepEqual(t, result, Response{})
 }
