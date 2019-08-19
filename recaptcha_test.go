@@ -102,3 +102,10 @@ func TestSvrError(t *test.T) {
 	)
 	assert.DeepEqual(t, result, Response{})
 }
+
+func TestActualAccess(t *test.T) {
+	r := New("6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe")
+	resp, err := r.Check("[::1]", "test_response")
+	assert.NilError(t, err)
+	assert.Assert(t, resp.Success)
+}
