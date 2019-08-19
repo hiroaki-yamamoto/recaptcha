@@ -8,7 +8,7 @@ import (
 	test "testing"
 
 	"github.com/hiroaki-yamamoto/recaptcha/stubs"
-	"gotest.tools/assert"
+	"gotest.tools/v3/assert"
 )
 
 func TestRecaptchaInit(t *test.T) {
