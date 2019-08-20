@@ -23,7 +23,7 @@ type Response struct {
 	Errors        []string  `json:"error-codes,omitempty"`
 }
 
-// ResponseError repersents the error of response from the server.
+// ResponseError represents the error of response from the server.
 type ResponseError struct {
 	Response *http.Response // Note: Response.Body is always closed in this case.
 	Body     string

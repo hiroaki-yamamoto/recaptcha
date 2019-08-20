@@ -1,6 +1,7 @@
 # Recaotcha Serverside Validation in Golang
 
 [![CI]][CILink] [![MI]][MILink] [![TC]][TCLink]
+[![GRC]][GRCLink]
 
 [CI]: https://circleci.com/gh/hiroaki-yamamoto/recaptcha.svg?style=svg
 [CILink]: https://circleci.com/gh/hiroaki-yamamoto/recaptcha
@@ -8,3 +9,5 @@
 [MILink]: https://codeclimate.com/github/hiroaki-yamamoto/recaptcha/maintainability
 [TC]: https://api.codeclimate.com/v1/badges/c89eb28bd7dd782716e4/test_coverage
 [TCLink]: https://codeclimate.com/github/hiroaki-yamamoto/recaptcha/test_coverage
+[GRC]: https://goreportcard.com/badge/github.com/hiroaki-yamamoto/recaptcha
+[GRCLink]: https://goreportcard.com/report/github.com/hiroaki-yamamoto/recaptcha
