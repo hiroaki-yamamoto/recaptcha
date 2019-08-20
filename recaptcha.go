@@ -41,8 +41,7 @@ type Recaptcha struct {
 	client *http.Client
 }
 
-// Check whether the response is from
-// human (returns true) or not (returns false).
+// Check whether the response is verified by recaptcha or not.
 func (r Recaptcha) Check(remoteIP, response string) (res Response, err error) {
 	raw, err := r.client.PostForm(verifyURL, url.Values{
 		"secret":   {r.secKey},
