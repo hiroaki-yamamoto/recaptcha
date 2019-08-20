@@ -1,4 +1,4 @@
-# Recaotcha Serverside Validation in Golang
+# Recaptcha Serverside Validation in Golang
 
 [![CI]][CILink] [![MI]][MILink] [![TC]][TCLink]
 [![GRC]][GRCLink]
