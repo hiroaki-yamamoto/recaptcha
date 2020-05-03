@@ -1,111 +1,142 @@
-package recaptcha // Needs to mock http request.
+package recaptcha_test
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
-	"reflect"
-	test "testing"
+	"net/http/httptest"
+	"net/url"
 
-	"github.com/hiroaki-yamamoto/recaptcha/stubs"
-	"gotest.tools/v3/assert"
+	"github.com/golang/mock/gomock"
+	. "github.com/hiroaki-yamamoto/recaptcha"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
-func TestRecaptchaInit(t *test.T) {
-	r := New("6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe")
-	assert.Equal(t, reflect.TypeOf(r), reflect.TypeOf(Recaptcha{}))
-}
+const verifyURL = "https://www.google.com/recaptcha/api/siteverify"
 
-func performAccess(
-	handler http.HandlerFunc,
-	httpStubFunc func(http.Handler) (*http.Client, func(), error),
-) (Response, error) {
-	var mock *http.Client
-	var close func()
-	var err error
-	if httpStubFunc == nil {
-		mock, close, err = stubs.CreateClientStub(handler)
-	} else {
-		mock, close, err = httpStubFunc(handler)
-	}
-	if err != nil {
-		return Response{}, err
-	}
-	defer close()
-	r := New("6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe")
-	r.client = mock
-	return r.Check("[::1]", "test_response")
-}
+var _ = Describe("Recaptcha", func() {
+	Context("In Mocked HTTP Client", func() {
+		var postCall *gomock.Call
+		postCallFunc := func(res *Response, statusCode int) func(
+			url string, param url.Values,
+		) (*http.Response, error) {
+			return func(
+				url string, param url.Values,
+			) (*http.Response, error) {
+				recorder := httptest.NewRecorder()
+				recorder.WriteHeader(statusCode)
+				encoder := json.NewEncoder(recorder)
+				Expect(encoder.Encode(res)).To(Succeed())
+				return recorder.Result(), nil
+			}
+		}
 
-func TestSuccess(t *test.T) {
-	rsp := Response{
-		Success:  true,
-		HostName: "localhost",
-	}
-	result, err := performAccess(http.HandlerFunc(
-		func(w http.ResponseWriter, r *http.Request) {
-			encoder := json.NewEncoder(w)
-			err := encoder.Encode(rsp)
-			assert.NilError(t, err)
-		},
-	), nil)
-	assert.NilError(t, err)
-	assert.DeepEqual(t, result, rsp)
-}
+		BeforeEach(func() {
+			postCall = httpCli.EXPECT().PostForm(
+				gomock.Eq(verifyURL),
+				gomock.Eq(url.Values{
+					"secret":   {recap.SecKey},
+					"remoteip": {"localhost"},
+					"response": {"test"},
+				}),
+			).Times(1)
+		})
 
-func TestFailure(t *test.T) {
-	rsp := Response{
-		Success:  false,
-		HostName: "localhost",
-		Errors:   []string{"bad-request"},
-	}
-	result, err := performAccess(http.HandlerFunc(
-		func(w http.ResponseWriter, r *http.Request) {
-			encoder := json.NewEncoder(w)
-			err := encoder.Encode(rsp)
-			assert.NilError(t, err)
-		},
-	), nil)
-	assert.NilError(t, err)
-	assert.DeepEqual(t, result, rsp)
-}
+		Context("With Success Result", func() {
+			var res *Response
+			BeforeEach(func() {
+				res = &Response{
+					Success:  true,
+					HostName: "localhost",
+				}
+				postCall = postCall.DoAndReturn(postCallFunc(res, http.StatusOK))
+			})
+			It("Should return the successful response.", func() {
+				resp, err := recap.Check("localhost", "test")
+				Expect(err).To(Succeed())
+				Expect(resp).To(Equal(res))
+			})
+		})
 
-func TestError(t *test.T) {
-	rsp := Response{
-		Success:  true,
-		HostName: "localhost",
-	}
-	result, err := performAccess(http.HandlerFunc(
-		func(w http.ResponseWriter, r *http.Request) {
-			encoder := json.NewEncoder(w)
-			err := encoder.Encode(rsp)
-			assert.NilError(t, err)
-		},
-	), stubs.CreateCliErrStub)
-	assert.Error(t, err, fmt.Sprintf("Post %s: Connection Error", verifyURL))
-	assert.DeepEqual(t, result, Response{})
-}
+		Context("With Failure Result", func() {
+			var res *Response
+			BeforeEach(func() {
+				res = &Response{
+					Success:  false,
+					HostName: "localhost",
+				}
+				postCall = postCall.DoAndReturn(postCallFunc(res, http.StatusOK))
+			})
+			It("Should return the failure response.", func() {
+				resp, err := recap.Check("localhost", "test")
+				Expect(err).To(Succeed())
+				Expect(resp).To(Equal(res))
+			})
+		})
 
-func TestSvrError(t *test.T) {
-	txt := "Internal Server Error"
-	code := http.StatusInternalServerError
-	result, err := performAccess(http.HandlerFunc(
-		func(w http.ResponseWriter, r *http.Request) {
-			w.WriteHeader(code)
-			numWrote, err := w.Write([]byte(txt))
-			assert.NilError(t, err)
-			assert.Equal(t, numWrote, len(txt))
-		},
-	), nil)
-	assert.Error(
-		t, err, fmt.Sprintf("Post %s: Returned %d: %s", verifyURL, code, txt),
-	)
-	assert.DeepEqual(t, result, Response{})
-}
+		Context("With Invalid Payload", func() {
+			var code int
+			var resp *http.Response
+			BeforeEach(func() {
+				code = http.StatusOK
+				rec := httptest.NewRecorder()
+				rec.WriteHeader(code)
+				rec.Write([]byte("Test Payload"))
+				resp = rec.Result()
+				postCall = postCall.DoAndReturn(func(
+					url string, param url.Values,
+				) (*http.Response, error) {
+					return resp, nil
+				})
+			})
+			It("Should raise an error.", func() {
+				acResp, err := recap.Check("localhost", "test")
+				Expect(err).NotTo(BeNil())
+				Expect(err.Error()).To(Equal(
+					"invalid character 'T' looking for beginning of value",
+				))
+				Expect(acResp).To(BeNil())
+			})
+		})
 
-func TestActualAccess(t *test.T) {
-	r := New("6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe")
-	resp, err := r.Check("[::1]", "test_response")
-	assert.NilError(t, err)
-	assert.Assert(t, resp.Success)
-}
+		Context("With Server Error", func() {
+			var code int
+			var resp *http.Response
+			BeforeEach(func() {
+				code = http.StatusInternalServerError
+				rec := httptest.NewRecorder()
+				rec.WriteHeader(code)
+				rec.Write([]byte("Test Error"))
+				resp = rec.Result()
+				postCall = postCall.DoAndReturn(func(
+					url string, param url.Values,
+				) (*http.Response, error) {
+					return resp, nil
+				})
+			})
+			It("Should raise an error.", func() {
+				acResp, err := recap.Check("localhost", "test")
+				Expect(err).To(MatchError(
+					&ResponseError{Response: resp, Body: "Test Error"},
+				))
+				Expect(err.Error()).To(Equal(
+					fmt.Sprintf("Post %s: Returned %d: Test Error", verifyURL, code),
+				))
+				Expect(acResp).To(BeNil())
+			})
+		})
+
+		Context("When PostForm raised an error", func() {
+			BeforeEach(func() {
+				postCall = postCall.Return(nil, errors.New("Test Error"))
+			})
+			It("Should raise an error", func() {
+				acResp, err := recap.Check("localhost", "test")
+				Expect(err).To(MatchError(errors.New("Test Error")))
+				Expect(acResp).To(BeNil())
+			})
+		})
+	})
+})

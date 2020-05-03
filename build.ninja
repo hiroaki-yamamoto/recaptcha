@@ -1,0 +1,4 @@
+rule mock
+  command = mockgen -package mocks -source $in -destination $out
+
+build mocks/mocks.go: mock ./interfaces.go

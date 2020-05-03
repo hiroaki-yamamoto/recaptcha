@@ -29,7 +29,7 @@ type ResponseError struct {
 	Body     string
 }
 
-func (r ResponseError) Error() string {
+func (r *ResponseError) Error() string {
 	return fmt.Sprintf(
 		"Post %s: Returned %d: %s", verifyURL, r.Response.StatusCode, r.Body,
 	)
@@ -37,14 +37,14 @@ func (r ResponseError) Error() string {
 
 // Recaptcha is a structure to handle recaptcha
 type Recaptcha struct {
-	secKey string
-	client *http.Client
+	SecKey string
+	Client IHttpClient
 }
 
 // Check whether the response is verified by recaptcha or not.
-func (r Recaptcha) Check(remoteIP, response string) (res Response, err error) {
-	raw, err := r.client.PostForm(verifyURL, url.Values{
-		"secret":   {r.secKey},
+func (r *Recaptcha) Check(remoteIP, response string) (res *Response, err error) {
+	raw, err := r.Client.PostForm(verifyURL, url.Values{
+		"secret":   {r.SecKey},
 		"remoteip": {remoteIP},
 		"response": {response},
 	})
@@ -57,16 +57,21 @@ func (r Recaptcha) Check(remoteIP, response string) (res Response, err error) {
 		_, rerr := buf.ReadFrom(raw.Body)
 		err = rerr
 		if err == nil {
-			err = ResponseError{Response: raw, Body: string(buf.String())}
+			err = &ResponseError{Response: raw, Body: string(buf.String())}
 		}
 		return
 	}
 	decoder := json.NewDecoder(raw.Body)
-	err = decoder.Decode(&res)
+	var resp Response
+	err = decoder.Decode(&resp)
+	if err != nil {
+		return
+	}
+	res = &resp
 	return
 }
 
 // New returns an instance of Recaptcha.
-func New(secretKey string) Recaptcha {
-	return Recaptcha{secKey: secretKey, client: &http.Client{}}
+func New(secretKey string) *Recaptcha {
+	return &Recaptcha{SecKey: secretKey, Client: &http.Client{}}
 }
