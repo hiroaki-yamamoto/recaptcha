@@ -16,4 +16,6 @@ vendor/
 
 .ninja_deps
 .ninja_log
-recaptcha.cov
+
+# Coverage files.
+*.cov
