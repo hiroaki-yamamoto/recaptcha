@@ -139,4 +139,14 @@ var _ = Describe("Recaptcha", func() {
 			})
 		})
 	})
+	Context("Actual Requesting Test", func() {
+		BeforeEach(func() {
+			recap.Client = &http.Client{}
+		})
+		It("Should be successful", func() {
+			resp, err := recap.Check("[::1]", "test")
+			Expect(err).To(Succeed())
+			Expect(resp.Success).To(BeTrue())
+		})
+	})
 })
