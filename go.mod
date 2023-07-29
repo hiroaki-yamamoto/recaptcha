@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/golang/mock v1.6.0
 	github.com/onsi/ginkgo/v2 v2.11.0
-	github.com/onsi/gomega v1.27.9
+	github.com/onsi/gomega v1.27.10
 )
 
 require (
