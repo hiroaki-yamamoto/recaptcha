@@ -2,7 +2,7 @@ module github.com/hiroaki-yamamoto/recaptcha
 
 go 1.23.0
 
-toolchain go1.24.4
+toolchain go1.24.5
 
 require (
 	github.com/golang/mock v1.6.0
