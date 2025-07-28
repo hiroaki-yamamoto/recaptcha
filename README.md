@@ -3,12 +3,12 @@
 [![CI]][CILink] [![MI]][MILink] [![TC]][TCLink]
 [![GRC]][GRCLink]
 
-[CI]: https://circleci.com/gh/hiroaki-yamamoto/recaptcha.svg?style=svg
-[CILink]: https://circleci.com/gh/hiroaki-yamamoto/recaptcha
-[MI]: https://api.codeclimate.com/v1/badges/c89eb28bd7dd782716e4/maintainability
-[MILink]: https://codeclimate.com/github/hiroaki-yamamoto/recaptcha/maintainability
-[TC]: https://api.codeclimate.com/v1/badges/c89eb28bd7dd782716e4/test_coverage
-[TCLink]: https://codeclimate.com/github/hiroaki-yamamoto/recaptcha/test_coverage
+[CI]: https://github.com/hiroaki-yamamoto/recaptcha/actions/workflows/test.yml/badge.svg
+[CILink]: https://github.com/hiroaki-yamamoto/recaptcha/actions/workflows/test.yml
+[MI]: https://qlty.sh/gh/hiroaki-yamamoto/projects/recaptcha/maintainability.svg
+[MILink]: https://qlty.sh/gh/hiroaki-yamamoto/projects/recaptcha
+[TC]: https://qlty.sh/gh/hiroaki-yamamoto/projects/recaptcha/coverage.svg
+[TCLink]: https://qlty.sh/gh/hiroaki-yamamoto/projects/recaptcha
 [GRC]: https://goreportcard.com/badge/github.com/hiroaki-yamamoto/recaptcha
 [GRCLink]: https://goreportcard.com/report/github.com/hiroaki-yamamoto/recaptcha
 
